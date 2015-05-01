@@ -1,16 +1,32 @@
-#!/bin/sh
+#!/usr/bin/env ruby
 
-indent() {
-  sed -u 's/^/       /'
-}
+# sync output
+$stdout.sync = true
 
-echo "-----> Found a hello.txt"
+BUILD_DIR = ARGV[0]
+CACHE_DIR = ARGV[1]
+ARCHIVE_NAME = "freetds-0.91.112"
 
-# if hello.txt is empty, abort the build
-if [ ! -s $1/hello.txt ]; then
-  echo "hello.txt was empty" | indent
-  exit 1
-fi
+puts "-----> Fetching & Extracting FreeTDS"
+puts `mkdir -p #{CACHE_DIR}`
+puts `curl ftp://ftp.freetds.org/pub/freetds/stable/freetds-patched.tar.gz -o - | tar -xz -C #{CACHE_DIR} -f -`
+puts `ls #{CACHE_DIR}/#{ARCHIVE_NAME}`
 
-# replace hello with goodbye in a new file
-cat $1/hello.txt | sed -e "s/[Hh]ello/Goodbye/g" > $1/goodbye.txt
+puts "-----> Configurating FreeTDS"
+puts `mkdir -p #{ARGV[0]}/vendor/freetds`
+puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && ./configure --prefix=#{BUILD_DIR}/vendor/freetds`
+
+puts "-----> Building FreeTDS"
+puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make`
+puts `ls #{CACHE_DIR}/#{ARCHIVE_NAME}`
+
+puts "-----> Installing FreeTDS into #{BUILD_DIR}/vendor/freetds"
+puts `mkdir -p #{ARGV[0]}/vendor/freetds`
+puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make install`
+puts `ls #{CACHE_DIR}/#{ARCHIVE_NAME}`
+puts `ls #{BUILD_DIR}/vendor/freetds`
+
+puts "-----> Writing FreeTDS configuration for subsequent buildpack"
+File.open("export", "w") do |file|
+  file.write("export FREETDS_DIR=#{BUILD_DIR}/vendor/freetds")
+end
