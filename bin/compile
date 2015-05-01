@@ -10,7 +10,6 @@ ARCHIVE_NAME = "freetds-0.91.112"
 puts "-----> Fetching & Extracting FreeTDS"
 puts `mkdir -p #{CACHE_DIR}`
 puts `curl ftp://ftp.freetds.org/pub/freetds/stable/freetds-patched.tar.gz -o - | tar -xz -C #{CACHE_DIR} -f -`
-puts `ls #{CACHE_DIR}/#{ARCHIVE_NAME}`
 
 puts "-----> Configurating FreeTDS"
 puts `mkdir -p #{ARGV[0]}/vendor/freetds`
@@ -18,13 +17,10 @@ puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && ./configure --prefix=#{BUILD_DIR}/vendo
 
 puts "-----> Building FreeTDS"
 puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make`
-puts `ls #{CACHE_DIR}/#{ARCHIVE_NAME}`
 
 puts "-----> Installing FreeTDS into #{BUILD_DIR}/vendor/freetds"
 puts `mkdir -p #{ARGV[0]}/vendor/freetds`
 puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make install`
-puts `ls #{CACHE_DIR}/#{ARCHIVE_NAME}`
-puts `ls #{BUILD_DIR}/vendor/freetds`
 
 puts "-----> Writing FreeTDS configuration for subsequent buildpack"
 File.open("export", "w") do |file|
