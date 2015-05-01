@@ -20,7 +20,7 @@ unless File.exist?("#{BUILD_DIR}/vendor/freetds")
   puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make`
 
   puts "-----> Installing FreeTDS into #{BUILD_DIR}/vendor/freetds"
-  puts `mkdir -p #{ARGV[0]}/vendor/freetds`
+  puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
   puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make install`
 end
 
