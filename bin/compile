@@ -7,7 +7,6 @@ BUILD_DIR = ARGV[0]
 CACHE_DIR = ARGV[1]
 ARCHIVE_NAME = "freetds-0.91.112"
 
-unless File.exist?("#{CACHE_DIR}/#{ARCHIVE_NAME}")
   puts "-----> Fetching & Extracting FreeTDS"
   puts `mkdir -p #{CACHE_DIR}`
   puts `curl ftp://ftp.freetds.org/pub/freetds/stable/freetds-patched.tar.gz -o - | tar -xz -C #{CACHE_DIR} -f -`
@@ -18,7 +17,6 @@ unless File.exist?("#{CACHE_DIR}/#{ARCHIVE_NAME}")
 
   puts "-----> Building FreeTDS"
   puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make`
-end
 
 puts "-----> Installing FreeTDS into #{BUILD_DIR}/vendor/freetds"
 puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
