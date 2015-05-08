@@ -12,14 +12,14 @@ ARCHIVE_NAME = "freetds-0.91.112"
   puts `curl ftp://ftp.freetds.org/pub/freetds/stable/freetds-patched.tar.gz -o - | tar -xz -C #{CACHE_DIR} -f -`
 
   puts "-----> Configurating FreeTDS"
-  puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
-  puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && ./configure --prefix=#{BUILD_DIR}/vendor/freetds`
+  puts `mkdir -p /app/vendor/freetds`
+  puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && ./configure --prefix=/app/vendor/freetds`
 
   puts "-----> Building FreeTDS"
   puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make`
 
-puts "-----> Installing FreeTDS into #{BUILD_DIR}/vendor/freetds"
-puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
+puts "-----> Installing FreeTDS into /app/vendor/freetds"
+puts `mkdir -p /app/vendor/freetds`
 puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make install`
 
 puts "-----> Writing FreeTDS configuration for subsequent buildpack"
