@@ -9,7 +9,7 @@ ARCHIVE_NAME = "freetds-0.91.112"
 
   puts "-----> Fetching & Extracting FreeTDS"
   puts `mkdir -p #{CACHE_DIR}`
-  puts `curl ftp://ftp.freetds.org/pub/freetds/stable/freetds-patched.tar.gz -o - | tar -xz -C #{CACHE_DIR} -f -`
+  puts `curl ftp://ftp.freetds.org/pub/freetds/stable/#{ARCHIVE_NAME}.tar.gz -o - | tar -xz -C #{CACHE_DIR} -f -`
 
   puts "-----> Configurating FreeTDS"
   puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
