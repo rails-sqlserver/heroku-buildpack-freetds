@@ -7,13 +7,15 @@ BUILD_DIR = ARGV[0]
 CACHE_DIR = ARGV[1]
 ARCHIVE_NAME = "freetds-0.91.112"
 
+  puts "-----> FreeTDS building in #{BUILD_DIR}"
+
   puts "-----> Fetching & Extracting FreeTDS"
   puts `mkdir -p #{CACHE_DIR}`
   puts `curl http://mirrors.ibiblio.org/freetds/stable/freetds-stable.tgz -o - | tar -xz -C #{CACHE_DIR} -f -`
 
   puts "-----> Configurating FreeTDS"
   puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
-  puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && ./configure --prefix=#{BUILD_DIR}/vendor/freetds`
+  puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && ./configure --prefix=#{BUILD_DIR}/vendor/freetds --with-libiconv-prefix=DIR --with-openssl=DIR --with-tdsver=7.3`
 
   puts "-----> Building FreeTDS"
   puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make`
@@ -26,7 +28,7 @@ puts "-----> Copying FreeTDS into /app/vendor/freetds"
 puts `cp -r #{BUILD_DIR}/vendor/freetds /app/vendor/freetds`
 
 puts "-----> Writing FreeTDS configuration for subsequent buildpack"
-File.open("export", "w") do |file|
+
+File.open("export", "a") do |file|
   file.write("export FREETDS_DIR=/app/vendor/freetds")
-  file.write("export TDSDUMP=/app/tmp/freetds.log")
 end
