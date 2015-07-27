@@ -9,7 +9,7 @@ ARCHIVE_NAME = "freetds-0.91.112"
 
   puts "-----> Fetching & Extracting FreeTDS"
   puts `mkdir -p #{CACHE_DIR}`
-  puts `curl ftp://ftp.freetds.org/pub/freetds/stable/#{ARCHIVE_NAME}.tar.gz -o - | tar -xz -C #{CACHE_DIR} -f -`
+  puts `curl http://mirrors.ibiblio.org/freetds/stable/freetds-stable.tgz -o - | tar -xz -C #{CACHE_DIR} -f -`
 
   puts "-----> Configurating FreeTDS"
   puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
@@ -28,4 +28,5 @@ puts `cp -r #{BUILD_DIR}/vendor/freetds /app/vendor/freetds`
 puts "-----> Writing FreeTDS configuration for subsequent buildpack"
 File.open("export", "w") do |file|
   file.write("export FREETDS_DIR=/app/vendor/freetds")
+  file.write("export TDSDUMP=/app/tmp/freetds.log")
 end
