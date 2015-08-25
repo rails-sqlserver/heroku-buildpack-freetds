@@ -12,6 +12,7 @@ ARCHIVE_NAME = "freetds-0.91.112"
   puts "-----> Fetching & Extracting FreeTDS"
   puts `mkdir -p #{CACHE_DIR}`
   puts `curl http://mirrors.ibiblio.org/freetds/stable/freetds-stable.tgz -o - | tar -xz -C #{CACHE_DIR} -f -`
+  puts `ls -al #{CACHE_DIR}`
 
   puts "-----> Configurating FreeTDS"
   puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
