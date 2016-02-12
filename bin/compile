@@ -5,7 +5,7 @@ $stdout.sync = true
 
 BUILD_DIR = ARGV[0]
 CACHE_DIR = ARGV[1]
-ARCHIVE_NAME = "freetds-0.95"
+ARCHIVE_NAME = "freetds-0.95.84"
 
   puts "-----> FreeTDS building in #{BUILD_DIR}"
 
