@@ -1,35 +1,130 @@
-#!/usr/bin/env ruby
+#!/bin/bash
+#
+# Usage:
+#  bin/compile BUILD_DIR CACHE_DIR ENV_DIR
+# Example
+#   BUILD_DIR is /tmp/build_5b72bfcaef1adfe4bb7a9e34d80201fc
+#   CACHE_DIR is  app
+#  The contents of CACHE_DIR will be persisted between builds.
 
-# sync output
-$stdout.sync = true
+set -eou pipefail
+IFS=$'\n\t'
+unset CDPATH
+# Influenced by https://dev.to/thiht/shell-scripts-matter
+# And see https://github.com/bf4/Notes/wiki/Shell-Scripting
 
-BUILD_DIR = ARGV[0]
-CACHE_DIR = ARGV[1]
-ARCHIVE_NAME = "freetds-0.95.84"
+topic()    { echo "-----> $*" ; }
+info()    { echo "       $*" ; }
+indent()  { sed -u 's/^/       /' ; } # it always runs on linux. on darwin is 'sed -l'
 
-  puts "-----> FreeTDS building in #{BUILD_DIR}"
+BUILD_DIR="$1"
+CACHE_DIR="$2"
+mkdir -p "$BUILD_DIR" "$CACHE_DIR"
+# shellcheck disable=SC2034
+ENV_DIR="${3}"
+# echo "$STACK"
+# echo "$SOURCE_VERSION"
+# See https://devcenter.heroku.com/articles/buildpack-api#bin-compile-summary
 
-  puts "-----> Fetching & Extracting FreeTDS"
-  puts `mkdir -p #{CACHE_DIR}`
-  puts `curl ftp://ftp.freetds.org/pub/freetds/stable/freetds-0.95.84.tar.gz -o - | tar -xz -C #{CACHE_DIR} -f -`
-  puts `ls -al #{CACHE_DIR}`
+BIN_DIR="$(cd "$(dirname "$0")"; pwd)" # absolute path
+LP_DIR="$(cd "$(dirname "$0")"; cd ..; pwd)"
+ROOT_DIR="$(dirname "$BIN_DIR")"
 
-  puts "-----> Configurating FreeTDS"
-  puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
-  puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && ./configure --prefix=#{BUILD_DIR}/vendor/freetds --with-libiconv-prefix=DIR --with-openssl=DIR --with-tdsver=7.3`
+info "BIN_DIR=${BIN_DIR}, ROOT_DIR=${ROOT_DIR}, BUILD_DIR=${BUILD_DIR}, CACHE_DIR=${CACHE_DIR}, pwd=$(pwd)"
 
-  puts "-----> Building FreeTDS"
-  puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make`
+load_env_vars() {
+  local env_var; env_var="${1:-}"
+  until [ -z "$env_var" ]; do [ -f "$ENV_DIR/$env_var" ] && export "$env_var=$(cat "$ENV_DIR/$env_var")"; shift ; env_var="${1:-}" ; done
+}
+load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION"
 
-puts "-----> Installing FreeTDS into #{BUILD_DIR}/vendor/freetds"
-puts `mkdir -p #{BUILD_DIR}/vendor/freetds`
-puts `cd #{CACHE_DIR}/#{ARCHIVE_NAME} && make install`
+FREETDS_VERSION="${FREETDS_VERSION:-1.00.21}"
+FREETDS_ARCHIVE_NAME="${FREETDS_ARCHIVE_NAME:-freetds-${FREETDS_VERSION}}"
+TDS_VERSION="${TDS_VERSION:-7.3}"
 
-puts "-----> Copying FreeTDS into /app/vendor/freetds"
-puts `cp -r #{BUILD_DIR}/vendor/freetds /app/vendor/freetds`
+CACHED_TAR="${CACHE_DIR}/freetds-${FREETDS_VERSION}-heroku.tar.bz2"
 
-puts "-----> Writing FreeTDS configuration for subsequent buildpack"
+# This installation target is in the BUILD_DIR, which means that
+# it'll end up in the slug at runtime.
+BUILD_TARGET_DIR="${BUILD_DIR}/freetds"
+mkdir -p "${BUILD_TARGET_DIR}"
 
-File.open("export", "a") do |file|
-  file.write("export FREETDS_DIR=/app/vendor/freetds")
-end
+# This is the path that will be used at dyno runtime, and in which we build.
+APP_TARGET_DIR="/app/freetds"
+mkdir -p "${BUILD_TARGET_DIR}"
+
+topic "FreeTDS ${FREETDS_VERSION} building in ${BUILD_DIR}"
+if [ ! -f "$CACHED_TAR" ]; then
+  info "Cached files not found - downloading and unpacking..."
+  FREETDS_FILE="$FREETDS_ARCHIVE_NAME.tar.gz"
+  FREETDS_URL="ftp://ftp.freetds.org/pub/freetds/stable/${FREETDS_FILE}"
+  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" | indent
+
+  topic "Building FreeTDS against OpenSSL $(openssl version)"
+  ( # directory changes in subshells have no effect
+    cd "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}"
+
+    # We must build at /app/... rather than in the BUILD_DIR because
+    # the installation hardwires some paths and symlinks. In order for
+    # these to be in the right location at dyno runtime, we have to
+    # build using the same path that applies at dyno runtime.
+    ./configure \
+      "--prefix=${APP_TARGET_DIR}" \
+      "--with-tdsver=${TDS_VERSION}" \
+      | indent
+    make && make install | indent
+    cd "$BUILD_DIR"
+    # shellcheck disable=SC2115
+    rm -rf "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}"
+  )
+
+  topic "Testing build"
+  "$APP_TARGET_DIR/bin/tsql" -C | indent
+
+  # cache build artifacts for future deploys
+  topic "Caching FreeTDS installation"
+  ( # directory changes in subshells have no effect
+    cd "${APP_TARGET_DIR}"
+    tar cjf "${CACHED_TAR}" . | indent
+  )
+
+  topic "Creating .profile.d entry"
+  mkdir -p "${BUILD_DIR}/.profile.d"
+
+  # These exports must point to /app, because the profile is
+  # executed in a running dyno, not the buildpack environment
+  cat <<EOF > "${BUILD_DIR}/.profile.d/freetds.sh"
+  export PATH="${APP_TARGET_DIR}/bin:$PATH"
+  # tiny_tds extconf.rb uses FREETDS_DIR
+  # https://github.com/rails-sqlserver/tiny_tds/blob/5046755ca91594003f8b3ca541d136f3ed859973/ext/tiny_tds/extconf.rb#L36-L38
+  export FREETDS_DIR="${APP_TARGET_DIR}"
+  export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-}"
+  export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-}"
+  export SYBASE="$BUILD_TARGET_DIR"
+  export CPPATH="${BUILD_TARGET_DIR}/include:${CPPATH:-}"
+  export CPATH="${BUILD_TARGET_DIR}/include:${CPATH:-}"
+  export PKG_CONFIG_PATH="${BUILD_TARGET_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+  export INCLUDE_PATH="${BUILD_TARGET_DIR}/include:${BUILD_TARGET_DIR}/include/openssl:${INCLUDE_PATH:-}"
+EOF
+ chmod +x "${BUILD_DIR}/.profile.d/freetds.sh"
+fi
+
+info "Unpacking cached files..."
+tar xjf "${CACHED_TAR}" -C "${BUILD_TARGET_DIR}" | indent
+
+info "Install of FreeTDS ${FREETDS_VERSION} complete"
+
+# These exports point to the build directory, not to /app, so that
+# they work for later buildpacks.
+export PATH="${BUILD_TARGET_DIR}/bin:$PATH"
+export FREETDS_DIR="${BUILD_TARGET_DIR}"
+export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-}"
+export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-}"
+export SYBASE="$BUILD_TARGET_DIR"
+export CPPATH="${BUILD_TARGET_DIR}/include:${CPPATH:-}"
+export CPATH="${BUILD_TARGET_DIR}/include:${CPATH:-}"
+export PKG_CONFIG_PATH="${BUILD_TARGET_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+export INCLUDE_PATH="${BUILD_TARGET_DIR}/include:${BUILD_TARGET_DIR}/include/openssl:${INCLUDE_PATH:-}"
+
+# give environment to later buildpacks
+export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|INCLUDE_PATH|PKG_CONFIG_PATH|FREETDS_DIR|SYBASE|CPPATH|CPATH)=' > "${LP_DIR}/export"
