@@ -160,10 +160,6 @@ export FREETDS_DIR="${BUILD_TARGET_DIR}"
 export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
 export LD_RUN_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
 export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
-if command -v /sbin/ldconfig &> /dev/null; then
-  topic "HACK: Linking /usr/local/lib making the gem build tiny_tds.so linked to libsybdb.so.5"
-  /sbin/ldconfig /usr/local/lib
-fi
 # give environment to later buildpacks
 export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|FREETDS_DIR)=' > "${LP_DIR}/export"
 
