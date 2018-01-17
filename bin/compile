@@ -43,7 +43,8 @@ FREETDS_ARCHIVE_NAME="${FREETDS_ARCHIVE_NAME:-freetds-${FREETDS_VERSION}}"
 TDS_VERSION="${TDS_VERSION:-7.3}" # or TDSVER
 
 CACHED_TAR="${CACHE_DIR}/freetds-${FREETDS_VERSION}-heroku.tar.bz2"
-if [ "${FREETDS_REBUILD:-}" = "true" ]; then
+# Default rebuild to true since I'm having issues linking the library to tiny_tds gem with a cached build.
+if [ "${FREETDS_REBUILD:-true}" = "true" ]; then
   rm -f "$CACHED_TAR"
 fi
 # This installation target is in the BUILD_DIR, which means that
