@@ -76,9 +76,10 @@ if [ ! -f "$CACHED_TAR" ]; then
       | indent
     make && make install && make clean | indent
     # FreeTDS advises caching the build options as below
-    # Consider adding --disable-odbc
+    # adding --disable-odbc making linking easier and we don't need it
     cat <<EOF > ".build_options"
       "--prefix=${APP_TARGET_DIR}" \
+      --disable-odbc \
       "--with-tdsver=${TDS_VERSION}"
 EOF
     cp .build_options "${APP_TARGET_DIR}/"
