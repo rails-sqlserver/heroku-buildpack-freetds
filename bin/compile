@@ -83,7 +83,8 @@ if [ ! -f "$CACHED_TAR" ]; then
       --disable-debug \
       "--with-tdsver=${TDS_VERSION}"
 EOF
-    /bin/bash .build_options | indent
+    # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
+    /bin/bash .build_options > "${APP_TARGET_DIR}/configure.log"
     # Flush make output to log since a file will be faster than printing to the screen.
     # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
     {
