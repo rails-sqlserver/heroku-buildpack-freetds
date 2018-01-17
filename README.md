@@ -38,8 +38,16 @@ This is used alongside the Ruby [buildpack](https://github.com/heroku/heroku-bui
 
 ## Install
 
+Use master
+
 ```bash
-heroku buildpacks:add --index 1 https://github.com/x-b-e/heroku-buildpack-freetds
+heroku buildpacks:set --index 1 https://github.com/x-b-e/heroku-buildpack-freetds
+```
+
+or use a stable tag, like [v1.0.0](https://github.com/x-b-e/heroku-buildpack-freetds/tree/v1.0.0)
+
+```bash
+heroku buildpacks:set --index 1 https://github.com/x-b-e/heroku-buildpack-freetds#v1.0.0
 ```
 
 License
