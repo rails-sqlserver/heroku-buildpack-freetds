@@ -62,7 +62,7 @@ if [ ! -f "$CACHED_TAR" ]; then
   FREETDS_FILE="$FREETDS_ARCHIVE_NAME.tar.gz"
   FREETDS_URL="ftp://ftp.freetds.org/pub/freetds/stable/${FREETDS_FILE}"
   # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
-  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" &> "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/unpack.log"
+  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" &> "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/build_log-unpack.log"
 
   topic "Building FreeTDS against OpenSSL $(openssl version)"
   ( # directory changes in subshells have no effect
@@ -84,13 +84,13 @@ if [ ! -f "$CACHED_TAR" ]; then
       "--with-tdsver=${TDS_VERSION}"
 EOF
     # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
-    /bin/bash .build_options > "${APP_TARGET_DIR}/configure.log"
+    /bin/bash .build_options > "${APP_TARGET_DIR}/build_log-configure.log"
     # Flush make output to log since a file will be faster than printing to the screen.
     # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
     {
       make && make install && make clean
-    } > make_install.stdout.log 2> make_install.stderr.log
-    cp .build_options make_install* "${APP_TARGET_DIR}/"
+    } > build_log-make_install.stdout.log 2> build_log-make_install.stderr.log
+    cp .build_options build_log-* "${APP_TARGET_DIR}/"
 
     cd "$BUILD_DIR"
     # shellcheck disable=SC2115
