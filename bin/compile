@@ -61,7 +61,8 @@ if [ ! -f "$CACHED_TAR" ]; then
   info "Cached files not found - downloading and unpacking..."
   FREETDS_FILE="$FREETDS_ARCHIVE_NAME.tar.gz"
   FREETDS_URL="ftp://ftp.freetds.org/pub/freetds/stable/${FREETDS_FILE}"
-  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" | indent
+  # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
+  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" &> "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/unpack.log"
 
   topic "Building FreeTDS against OpenSSL $(openssl version)"
   ( # directory changes in subshells have no effect
@@ -84,6 +85,7 @@ if [ ! -f "$CACHED_TAR" ]; then
 EOF
     /bin/bash .build_options | indent
     # Flush make output to log since a file will be faster than printing to the screen.
+    # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
     {
       make && make install && make clean
     } > make_install.stdout.log 2> make_install.stderr.log
