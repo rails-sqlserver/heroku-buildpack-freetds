@@ -16,6 +16,18 @@ Make sure the version you're referencing exists on as a `.tar.gz` file on the [F
 
 See `load_env_vars` in [`bin/compile`](bin/compile) for additional configurable variables.
 
+You may also force the buildpack to rebuild the binary. This may be necessary when updating the buildpack.
+
+```bash
+heroku config:set FREETDS_REBUILD=true
+```
+
+Just don't forget, after a successful release, to unset it.
+
+```bash
+heroku config:unset FREETDS_REBUILD --app xbe-staging
+```
+
 ## How it works
 
 Rather than pulling down binary dependencies from a package manager and extracting them into place,
@@ -35,6 +47,9 @@ Allows for usage of [TinyTDS](https://github.com/rails-sqlserver/tiny_tds) on He
 ## Usage
 
 This is used alongside the Ruby [buildpack](https://github.com/heroku/heroku-buildpack-ruby).
+
+It may be useful to load any client libraries as part of the release task to ensure the libraries
+linked correctly. For example, in a ruby app, you may add to the Procfile: `release: bin/rails r 'require "tiny_tds"'`
 
 ## Install
 

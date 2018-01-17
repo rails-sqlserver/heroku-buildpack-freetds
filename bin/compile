@@ -36,14 +36,16 @@ load_env_vars() {
   local env_var; env_var="${1:-}"
   until [ -z "$env_var" ]; do [ -f "$ENV_DIR/$env_var" ] && export "$env_var=$(cat "$ENV_DIR/$env_var")"; shift ; env_var="${1:-}" ; done
 }
-load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION"
+load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION" "FREETDS_REBUILD"
 
 FREETDS_VERSION="${FREETDS_VERSION:-1.00.21}"
 FREETDS_ARCHIVE_NAME="${FREETDS_ARCHIVE_NAME:-freetds-${FREETDS_VERSION}}"
 TDS_VERSION="${TDS_VERSION:-7.3}"
 
 CACHED_TAR="${CACHE_DIR}/freetds-${FREETDS_VERSION}-heroku.tar.bz2"
-
+if [ "${FREETDS_REBUILD:-}" = "true" ]; then
+  rm -f "$CACHED_TAR"
+fi
 # This installation target is in the BUILD_DIR, which means that
 # it'll end up in the slug at runtime.
 BUILD_TARGET_DIR="${BUILD_DIR}/freetds"
