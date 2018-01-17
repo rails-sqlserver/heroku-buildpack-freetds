@@ -40,7 +40,7 @@ load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION" "FREETDS_RE
 
 FREETDS_VERSION="${FREETDS_VERSION:-1.00.21}"
 FREETDS_ARCHIVE_NAME="${FREETDS_ARCHIVE_NAME:-freetds-${FREETDS_VERSION}}"
-TDS_VERSION="${TDS_VERSION:-7.3}"
+TDS_VERSION="${TDS_VERSION:-7.3}" # or TDSVER
 
 CACHED_TAR="${CACHE_DIR}/freetds-${FREETDS_VERSION}-heroku.tar.bz2"
 if [ "${FREETDS_REBUILD:-}" = "true" ]; then
@@ -70,18 +70,17 @@ if [ ! -f "$CACHED_TAR" ]; then
     # the installation hardwires some paths and symlinks. In order for
     # these to be in the right location at dyno runtime, we have to
     # build using the same path that applies at dyno runtime.
-    ./configure \
-      "--prefix=${APP_TARGET_DIR}" \
-      "--with-tdsver=${TDS_VERSION}" \
-      | indent
-    make && make install && make clean | indent
+
     # FreeTDS advises caching the build options as below
     # adding --disable-odbc making linking easier and we don't need it
     cat <<EOF > ".build_options"
+    ./configure \
       "--prefix=${APP_TARGET_DIR}" \
       --disable-odbc \
       "--with-tdsver=${TDS_VERSION}"
 EOF
+    /bin/bash .build_options | indent
+    make && make install && make clean | indent
     cp .build_options "${APP_TARGET_DIR}/"
 
     cd "$BUILD_DIR"
@@ -144,6 +143,7 @@ EOF
   export LD_LIBRARY_PATH="${APP_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
   export LD_RUN_PATH="${APP_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
   export LIBRARY_PATH="${APP_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
+  export SYBASE="${APP_TARGET_DIR}"
 EOF
  chmod +x "${BUILD_DIR}/.profile.d/freetds.sh"
  echo "configured APP env vars:" | indent
@@ -162,8 +162,9 @@ export FREETDS_DIR="${BUILD_TARGET_DIR}"
 export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
 export LD_RUN_PATH="${BUILD_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
 export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
+export SYBASE="${APP_TARGET_DIR}"
 # give environment to later buildpacks
-export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|FREETDS_DIR)=' > "${LP_DIR}/export"
+export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|FREETDS_DIR|SYBASE)=' > "${LP_DIR}/export"
 
 echo "configured BUILDPACK env vars:" | indent
 indent < "${LP_DIR}/export"
