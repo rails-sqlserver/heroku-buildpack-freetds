@@ -99,14 +99,13 @@ if [ ! -f "$CACHED_TAR" ]; then
   export PATH="${APP_TARGET_DIR}/bin:$PATH"
   # tiny_tds extconf.rb uses FREETDS_DIR
   # https://github.com/rails-sqlserver/tiny_tds/blob/5046755ca91594003f8b3ca541d136f3ed859973/ext/tiny_tds/extconf.rb#L36-L38
+  # ldd freetds/lib/libsybdb.so
+  # bin/rails r 'require "tiny_tds"' should succeed
+  # try /sbin/ldconfig /usr/local/lib; bundle exec gem uninstall tiny_tds; bundle
+  # See https://github.com/rails-sqlserver/tiny_tds/issues/210 https://github.com/rails-sqlserver/tiny_tds/issues/74 https://github.com/rails-sqlserver/tiny_tds/issues/50
   export FREETDS_DIR="${APP_TARGET_DIR}"
-  export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-}"
-  export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-}"
-  export SYBASE="$BUILD_TARGET_DIR"
-  export CPPATH="${BUILD_TARGET_DIR}/include:${CPPATH:-}"
-  export CPATH="${BUILD_TARGET_DIR}/include:${CPATH:-}"
-  export PKG_CONFIG_PATH="${BUILD_TARGET_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-  export INCLUDE_PATH="${BUILD_TARGET_DIR}/include:${BUILD_TARGET_DIR}/include/openssl:${INCLUDE_PATH:-}"
+  export LD_LIBRARY_PATH="${APP_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
+  export LIBRARY_PATH="${APP_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
 EOF
  chmod +x "${BUILD_DIR}/.profile.d/freetds.sh"
  echo "configured APP env vars:" | indent
@@ -122,16 +121,11 @@ info "Install of FreeTDS ${FREETDS_VERSION} complete"
 # they work for later buildpacks.
 export PATH="${BUILD_TARGET_DIR}/bin:$PATH"
 export FREETDS_DIR="${BUILD_TARGET_DIR}"
-export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-}"
-export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-}"
-export SYBASE="$BUILD_TARGET_DIR"
-export CPPATH="${BUILD_TARGET_DIR}/include:${CPPATH:-}"
-export CPATH="${BUILD_TARGET_DIR}/include:${CPATH:-}"
-export PKG_CONFIG_PATH="${BUILD_TARGET_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-export INCLUDE_PATH="${BUILD_TARGET_DIR}/include:${BUILD_TARGET_DIR}/include/openssl:${INCLUDE_PATH:-}"
+export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
+export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
 
 # give environment to later buildpacks
-export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|INCLUDE_PATH|PKG_CONFIG_PATH|FREETDS_DIR|SYBASE|CPPATH|CPATH)=' > "${LP_DIR}/export"
+export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|FREETDS_DIR)=' > "${LP_DIR}/export"
 
 echo "configured BUILDPACK env vars:" | indent
 indent < "${LP_DIR}/export"
