@@ -107,6 +107,8 @@ if [ ! -f "$CACHED_TAR" ]; then
   export INCLUDE_PATH="${BUILD_TARGET_DIR}/include:${BUILD_TARGET_DIR}/include/openssl:${INCLUDE_PATH:-}"
 EOF
  chmod +x "${BUILD_DIR}/.profile.d/freetds.sh"
+ echo "configured APP env vars:" | indent
+ indent < "${BUILD_DIR}/.profile.d/freetds.sh"
 fi
 
 info "Unpacking cached files..."
@@ -128,3 +130,6 @@ export INCLUDE_PATH="${BUILD_TARGET_DIR}/include:${BUILD_TARGET_DIR}/include/ope
 
 # give environment to later buildpacks
 export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|INCLUDE_PATH|PKG_CONFIG_PATH|FREETDS_DIR|SYBASE|CPPATH|CPATH)=' > "${LP_DIR}/export"
+
+echo "configured BUILDPACK env vars:" | indent
+indent < "${LP_DIR}/export"
