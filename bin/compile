@@ -14,11 +14,8 @@ unset CDPATH
 # Always log finish, bash pseudo-signal: EXIT
 # Usage:
 #   trap finish EXIT
-# Optional:
-#   Will execute a 'cleanup' function if defined.
 finish() {
   echo "       END Running script: ${0##*/}"
-  command -v cleanup &>/dev/null && cleanup
 }
 
 # Log errors, if any, bash pseudo-signal: ERR
@@ -85,7 +82,8 @@ if [ ! -f "$CACHED_TAR" ]; then
   FREETDS_URL="ftp://ftp.freetds.org/pub/freetds/stable/${FREETDS_FILE}"
   # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
   # TODO(BF): Consider calculating and verifying SHA256: openssl dgst -sha256 < "$FREETDS_FILE"
-  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" &> "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/build_log-unpack.log"
+  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" > "${BUILD_DIR}/build_log-unpack.log" # Can't write to the archive dir until it exists
+  mv "${BUILD_DIR}/build_log-unpack.log" "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/"
 
   topic "Building FreeTDS against OpenSSL $(openssl version)"
   ( # directory changes in subshells have no effect
@@ -107,7 +105,7 @@ if [ ! -f "$CACHED_TAR" ]; then
       "--with-tdsver=${TDS_VERSION}"
 EOF
     # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
-    /bin/bash .build_options > "${APP_TARGET_DIR}/build_log-configure.log"
+    /bin/bash .build_options > build_log-configure.stdout.log 2> build_log-configure.stderr.log
     # Flush make output to log since a file will be faster than printing to the screen.
     # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
     {
