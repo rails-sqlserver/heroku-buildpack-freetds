@@ -80,44 +80,12 @@ configure_app_env_vars() {
   topic "Creating .profile.d entry"
   mkdir -p "${BUILD_DIR}/.profile.d"
 
-  # Possibly relevant compile output
-  # /bin/mkdir -p '/app/freetds/lib'
-  # /bin/bash ../../libtool   --mode=install /usr/bin/install -c   libct.la '/app/freetds/lib'
-  # libtool: install: /usr/bin/install -c .libs/libct.so.4.0.0 /app/freetds/lib/libct.so.4.0.0
-  # libtool: install: (cd /app/freetds/lib && { ln -s -f libct.so.4.0.0 libct.so.4 || { rm -f libct.so.4 && ln -s libct.so.4.0.0 libct.so.4; }; })
-  # libtool: install: (cd /app/freetds/lib && { ln -s -f libct.so.4.0.0 libct.so || { rm -f libct.so && ln -s libct.so.4.0.0 libct.so; }; })
-  # libtool: install: /usr/bin/install -c .libs/libct.lai /app/freetds/lib/libct.la
-  # libtool: install: /usr/bin/install -c .libs/libct.a /app/freetds/lib/libct.a
-  # libtool: install: chmod 644 /app/freetds/lib/libct.a
-  # libtool: install: ranlib /app/freetds/lib/libct.a
-  # libtool: finish: PATH="/usr/local/bin:/usr/bin:/bin:/tmp/codon/vendor/bin:/sbin" ldconfig -n /app/freetds/lib
-  # ----------------------------------------------------------------------
-  # Libraries have been installed in:
-  #   /app/freetds/lib
-  #
-  # If you ever happen to want to link against installed libraries
-  # in a given directory, LIBDIR, you must either use libtool, and
-  # specify the full pathname of the library, or use the '-LLIBDIR'
-  # flag during linking and do at least one of the following:
-  #   - add LIBDIR to the 'LD_LIBRARY_PATH' environment variable
-  #     during execution
-  #   - add LIBDIR to the 'LD_RUN_PATH' environment variable
-  #     during linking
-  #   - use the '-Wl,-rpath -Wl,LIBDIR' linker flag
-  #   - have your system administrator add LIBDIR to '/etc/ld.so.conf'
-  #
-  # See any operating system documentation about shared libraries for
-  # more information, such as the ld(1) and ld.so(8) manual pages.
-
   # These exports must point to /app, because the profile is
   # executed in a running dyno, not the buildpack environment
   cat <<EOF > "${BUILD_DIR}/.profile.d/freetds.sh"
   export PATH="${APP_TARGET_DIR}/bin:$PATH"
   # tiny_tds extconf.rb uses FREETDS_DIR
   # https://github.com/rails-sqlserver/tiny_tds/blob/5046755ca91594003f8b3ca541d136f3ed859973/ext/tiny_tds/extconf.rb#L36-L38
-  # OR HACK RELEASE PHASE:
-  #   { bin/rails 'require "tiny_tds"' || ( bundle exec gem uninstall tiny_tds; /sbin/ldconfig /usr/local/lib; bundle ) }
-  # See https://github.com/rails-sqlserver/tiny_tds/issues/210 https://github.com/rails-sqlserver/tiny_tds/issues/74 https://github.com/rails-sqlserver/tiny_tds/issues/50
   export FREETDS_DIR="${APP_TARGET_DIR}"
   export LD_LIBRARY_PATH="${APP_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
   export LD_RUN_PATH="${APP_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
