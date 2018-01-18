@@ -75,61 +75,7 @@ mkdir -p "${BUILD_TARGET_DIR}"
 APP_TARGET_DIR="/app/freetds"
 mkdir -p "${BUILD_TARGET_DIR}"
 
-topic "FreeTDS ${FREETDS_VERSION} building in ${BUILD_DIR}"
-if [ ! -f "$CACHED_TAR" ]; then
-  info "Cached files not found - downloading and unpacking..."
-  FREETDS_FILE="$FREETDS_ARCHIVE_NAME.tar.gz"
-  FREETDS_URL="ftp://ftp.freetds.org/pub/freetds/stable/${FREETDS_FILE}"
-  # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
-  # TODO(BF): Consider calculating and verifying SHA256: openssl dgst -sha256 < "$FREETDS_FILE"
-  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" > "${BUILD_DIR}/build_log-unpack.log" # Can't write to the archive dir until it exists
-  mv "${BUILD_DIR}/build_log-unpack.log" "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/"
-
-  topic "Building FreeTDS against OpenSSL $(openssl version)"
-  ( # directory changes in subshells have no effect
-    cd "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}"
-
-    # We must build at /app/... rather than in the BUILD_DIR because
-    # the installation hardwires some paths and symlinks. In order for
-    # these to be in the right location at dyno runtime, we have to
-    # build using the same path that applies at dyno runtime.
-
-    # FreeTDS advises caching the build options as below
-    # adding --disable-odbc making linking easier and we don't need it
-    # adding --disable-debug to speed up compile
-    cat <<EOF > ".build_options"
-    ./configure \
-      "--prefix=${APP_TARGET_DIR}" \
-      --disable-odbc \
-      --disable-debug \
-      "--with-tdsver=${TDS_VERSION}"
-EOF
-    # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
-    /bin/bash .build_options > build_log-configure.stdout.log 2> build_log-configure.stderr.log
-    # Flush make output to log since a file will be faster than printing to the screen.
-    # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
-    {
-      make && make install && make clean
-    } > build_log-make_install.stdout.log 2> build_log-make_install.stderr.log
-    cp .build_options build_log-* "${APP_TARGET_DIR}/"
-
-    cd "$BUILD_DIR"
-    # shellcheck disable=SC2115
-    rm -rf "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}"
-  )
-
-  topic "Testing build"
-  "$APP_TARGET_DIR/bin/tsql" -C | indent
-
-  # cache build artifacts for future deploys
-  topic "Caching FreeTDS installation"
-  ( # directory changes in subshells have no effect
-    cd "${APP_TARGET_DIR}"
-    # TODO(BF): Consider removing the documentation before tarring
-    # rm -rf share
-    tar cjf "${CACHED_TAR}" . | indent
-  )
-
+configure_app_env_vars() {
   topic "Creating .profile.d entry"
   mkdir -p "${BUILD_DIR}/.profile.d"
 
@@ -180,23 +126,100 @@ EOF
  chmod +x "${BUILD_DIR}/.profile.d/freetds.sh"
  echo "configured APP env vars:" | indent
  indent < "${BUILD_DIR}/.profile.d/freetds.sh"
-fi
+}
 
-info "Unpacking cached files..."
-tar xjf "${CACHED_TAR}" -C "${BUILD_TARGET_DIR}" | indent
+download_and_extract_freetds_archive() {
+  FREETDS_FILE="$FREETDS_ARCHIVE_NAME.tar.gz"
+  FREETDS_URL="ftp://ftp.freetds.org/pub/freetds/stable/${FREETDS_FILE}"
+  # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
+  # TODO(BF): Consider calculating and verifying SHA256: openssl dgst -sha256 < "$FREETDS_FILE"
+  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" > "${BUILD_DIR}/build_log-unpack.log" # Can't write to the archive dir until it exists
+  mv "${BUILD_DIR}/build_log-unpack.log" "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/"
+}
 
-info "Install of FreeTDS ${FREETDS_VERSION} complete"
+build_and_install_freetds() {
+  topic "Building FreeTDS against OpenSSL $(openssl version)"
+  ( # directory changes in subshells have no effect
+    cd "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}"
 
-# These exports point to the build directory, not to /app, so that
-# they work for later buildpacks.
-export PATH="${BUILD_TARGET_DIR}/bin:$PATH"
-export FREETDS_DIR="${BUILD_TARGET_DIR}"
-export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
-export LD_RUN_PATH="${BUILD_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
-export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
-export SYBASE="${APP_TARGET_DIR}"
-# give environment to later buildpacks
-export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|FREETDS_DIR|SYBASE)=' > "${LP_DIR}/export"
+    # We must build at /app/... rather than in the BUILD_DIR because
+    # the installation hardwires some paths and symlinks. In order for
+    # these to be in the right location at dyno runtime, we have to
+    # build using the same path that applies at dyno runtime.
 
-echo "configured BUILDPACK env vars:" | indent
-indent < "${LP_DIR}/export"
+    # FreeTDS advises caching the build options as below
+    # adding --disable-odbc making linking easier and we don't need it
+    # adding --disable-debug to speed up compile
+    cat <<EOF > ".build_options"
+    ./configure \
+      "--prefix=${APP_TARGET_DIR}" \
+      --disable-odbc \
+      --disable-debug \
+      "--with-tdsver=${TDS_VERSION}"
+EOF
+    # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
+    /bin/bash .build_options > build_log-configure.stdout.log 2> build_log-configure.stderr.log
+    # Flush make output to log since a file will be faster than printing to the screen.
+    # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
+    {
+      make && make install && make clean
+    } > build_log-make_install.stdout.log 2> build_log-make_install.stderr.log
+    cp .build_options build_log-* "${APP_TARGET_DIR}/"
+
+    cd "$BUILD_DIR"
+    # shellcheck disable=SC2115
+    rm -rf "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}"
+  )
+}
+
+cache_build_artifacts_for_future_deploys() {
+  topic "Caching FreeTDS installation"
+  ( # directory changes in subshells have no effect
+    cd "${APP_TARGET_DIR}"
+    # TODO(BF): Consider removing the documentation before tarring
+    # rm -rf share
+    tar cjf "${CACHED_TAR}" . | indent
+  )
+}
+
+main() {
+  topic "FreeTDS ${FREETDS_VERSION} building in ${BUILD_DIR}"
+  if [ -f "$CACHED_TAR" ]; then
+    # Just source the build env vars
+    # shellcheck disable=SC1090
+   . "${BUILD_DIR}/.profile.d/freetds.sh"
+ else
+    info "Cached files not found - downloading and unpacking..."
+    download_and_extract_freetds_archive
+
+    configure_app_env_vars
+
+    build_and_install_freetds
+
+    topic "Testing build"
+    "$APP_TARGET_DIR/bin/tsql" -C | indent
+
+    cache_build_artifacts_for_future_deploys
+  fi
+
+  info "Unpacking cached files..."
+  tar xjf "${CACHED_TAR}" -C "${BUILD_TARGET_DIR}" | indent
+
+  info "Install of FreeTDS ${FREETDS_VERSION} complete"
+
+  # These exports point to the build directory, not to /app, so that
+  # they work for later buildpacks.
+  export PATH="${BUILD_TARGET_DIR}/bin:$PATH"
+  export FREETDS_DIR="${BUILD_TARGET_DIR}"
+  export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
+  export LD_RUN_PATH="${BUILD_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
+  export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
+  export SYBASE="${APP_TARGET_DIR}"
+  # give environment to later buildpacks
+  export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|FREETDS_DIR|SYBASE)=' > "${LP_DIR}/export"
+
+  echo "configured BUILDPACK env vars:" | indent
+  indent < "${LP_DIR}/export"
+}
+
+main
