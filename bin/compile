@@ -10,6 +10,28 @@
 set -eou pipefail
 IFS=$'\n\t'
 unset CDPATH
+
+# Always log finish, bash pseudo-signal: EXIT
+# Usage:
+#   trap finish EXIT
+# Optional:
+#   Will execute a 'cleanup' function if defined.
+finish() {
+  echo "       END Running script: ${0##*/}"
+  command -v cleanup &>/dev/null && cleanup
+}
+
+# Log errors, if any, bash pseudo-signal: ERR
+# Usage:
+#   trap 'finish_error $LINENO' ERR
+finish_error()  {
+  errcode=$?
+  echo "       END ERROR Running script: ${0##*/}:$1: exited with '${errcode}'."
+}
+
+trap 'finish' EXIT
+trap 'finish_error $LINENO' ERR
+
 # Influenced by https://dev.to/thiht/shell-scripts-matter
 # And see https://github.com/bf4/Notes/wiki/Shell-Scripting
 
