@@ -16,11 +16,16 @@ Make sure the version you're referencing exists on as a `.tar.gz` file on the [F
 
 See `load_env_vars` in [`bin/compile`](bin/compile) for additional configurable variables.
 
-At the moment, FreeTDS is downloaded and built every time since there are linking problems when caching the build artifact.
-The is configured by a default config of `FREETDS_REBUILD=true`.  This default may be turned off be setting it to anything else.
+You may also force the buildpack to rebuild the binary. This may be necessary when updating the buildpack.
 
 ```bash
-heroku config:set FREETDS_REBUILD=false
+heroku config:set FREETDS_REBUILD=true
+```
+
+Just don't forget, after a successful release, to unset it.
+
+```bash
+heroku config:unset FREETDS_REBUILD
 ```
 
 ## How it works
