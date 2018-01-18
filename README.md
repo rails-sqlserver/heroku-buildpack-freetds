@@ -54,11 +54,17 @@ Use master
 heroku buildpacks:set --index 1 https://github.com/x-b-e/heroku-buildpack-freetds
 ```
 
-or use a stable tag, like [v1.0.0](https://github.com/x-b-e/heroku-buildpack-freetds/tree/v1.0.0)
+or use a stable tag, like [v1.1.0](https://github.com/x-b-e/heroku-buildpack-freetds/tree/v1.1.0)
 
 ```bash
-heroku buildpacks:set --index 1 https://github.com/x-b-e/heroku-buildpack-freetds#v1.0.0
+heroku buildpacks:set --index 1 https://github.com/x-b-e/heroku-buildpack-freetds#v1.1.0
 ```
+
+## Changelog
+
+- HEAD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.0...master)
+- 1.1.0 Some improvements, including logging and env var FREETDS_REBUILD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.0.0...v1.1.0)
+- 1.0.0 First stable release. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/d17ff27906644d0581e0654cd337562c20dcafe9...v1.0.0)
 
 License
 -------
