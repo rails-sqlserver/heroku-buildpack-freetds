@@ -71,6 +71,27 @@ heroku buildpacks:set --index 1 https://github.com/x-b-e/heroku-buildpack-freetd
 - 1.1.0 Some improvements, including logging and env var FREETDS_REBUILD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.0.0...v1.1.0)
 - 1.0.0 First stable release. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/d17ff27906644d0581e0654cd337562c20dcafe9...v1.0.0)
 
+## Debugging
+
+From 'heroku run bash'.
+
+Print FreeTDS build logs to the screen:
+
+```bash
+for file in freetds/build_log-*; do echo -e "\n\n----------------------- $file------------------\n\n"; cat "$file"; done
+```
+
+Print TinyTDS build logs to the screen:
+
+```bash
+# change env vars as needed
+( export TINY_TDS_VERSION="2.1.0"; export RUBY_PATH_VERSION="2.3.0"; for cmd in "ld /app/vendor/bundle/ruby/2.3.0/gems/tiny_tds-${TINY_TDS_VERSION}/lib/tiny_tds/tiny_tds.so" \
+"cat /app/vendor/bundle/ruby/${RUBY_PATH_VERSION}/gems/tiny_tds-${TINY_TDS_VERSION}/ext/tiny_tds/Makefile" \
+"cat /app/vendor/bundle/ruby/${RUBY_PATH_VERSION}/extensions/x86_64-linux/${RUBY_PATH_VERSION}-static/tiny_tds-${TINY_TDS_VERSION}/gem_make.out" \
+"cat   /app/vendor/bundle/ruby/${RUBY_PATH_VERSION}/extensions/x86_64-linux/${RUBY_PATH_VERSION}-static/tiny_tds-${TINY_TDS_VERSION}/mkmf.log" ; do
+echo -e "\n\n----------------------- $cmd------------------\n\n"; eval "$cmd"; done ; )
+```
+
 License
 -------
 
