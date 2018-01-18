@@ -126,6 +126,24 @@ EOF
  chmod +x "${BUILD_DIR}/.profile.d/freetds.sh"
  echo "configured APP env vars:" | indent
  indent < "${BUILD_DIR}/.profile.d/freetds.sh"
+ # shellcheck disable=SC1090
+ . "${BUILD_DIR}/.profile.d/freetds.sh"
+}
+
+configure_buildpack_env_vars() {
+  # These exports point to the build directory, not to /app, so that
+  # they work for later buildpacks.
+  export PATH="${BUILD_TARGET_DIR}/bin:$PATH"
+  export FREETDS_DIR="${BUILD_TARGET_DIR}"
+  export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
+  export LD_RUN_PATH="${BUILD_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
+  export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
+  export SYBASE="${APP_TARGET_DIR}"
+  # give environment to later buildpacks
+  export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|FREETDS_DIR|SYBASE)=' > "${LP_DIR}/export"
+
+  echo "configured BUILDPACK env vars:" | indent
+  indent < "${LP_DIR}/export"
 }
 
 download_and_extract_freetds_archive() {
@@ -184,15 +202,12 @@ cache_build_artifacts_for_future_deploys() {
 
 main() {
   topic "FreeTDS ${FREETDS_VERSION} building in ${BUILD_DIR}"
-  if [ -f "$CACHED_TAR" ]; then
-    # Just source the build env vars
-    # shellcheck disable=SC1090
-   . "${BUILD_DIR}/.profile.d/freetds.sh"
- else
+
+  configure_app_env_vars
+
+  if [ ! -f "$CACHED_TAR" ]; then
     info "Cached files not found - downloading and unpacking..."
     download_and_extract_freetds_archive
-
-    configure_app_env_vars
 
     build_and_install_freetds
 
@@ -205,21 +220,9 @@ main() {
   info "Unpacking cached files..."
   tar xjf "${CACHED_TAR}" -C "${BUILD_TARGET_DIR}" | indent
 
+  configure_buildpack_env_vars
+
   info "Install of FreeTDS ${FREETDS_VERSION} complete"
-
-  # These exports point to the build directory, not to /app, so that
-  # they work for later buildpacks.
-  export PATH="${BUILD_TARGET_DIR}/bin:$PATH"
-  export FREETDS_DIR="${BUILD_TARGET_DIR}"
-  export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
-  export LD_RUN_PATH="${BUILD_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
-  export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
-  export SYBASE="${APP_TARGET_DIR}"
-  # give environment to later buildpacks
-  export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|FREETDS_DIR|SYBASE)=' > "${LP_DIR}/export"
-
-  echo "configured BUILDPACK env vars:" | indent
-  indent < "${LP_DIR}/export"
 }
 
 main
