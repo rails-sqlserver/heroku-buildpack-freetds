@@ -32,7 +32,8 @@ trap 'finish_error $LINENO' ERR
 # Influenced by https://dev.to/thiht/shell-scripts-matter
 # And see https://github.com/bf4/Notes/wiki/Shell-Scripting
 
-topic()    { echo "-----> $*" ; }
+logstamp() { printf "[%s]" "$(TZ='America/Chicago' date +'%Y-%m-%d %H:%M:%S')" ; }
+topic()    { echo "-----> $(logstamp) $*" ; }
 info()    { echo "       $*" ; }
 indent()  { sed -u 's/^/       /' ; } # it always runs on linux. on darwin is 'sed -l'
 
