@@ -49,7 +49,7 @@ Allows for usage of [TinyTDS](https://github.com/rails-sqlserver/tiny_tds) on He
 This is used alongside the Ruby [buildpack](https://github.com/heroku/heroku-buildpack-ruby).
 
 It may be useful to load any client libraries as part of the release task to ensure the libraries
-linked correctly. For example, in a ruby app, you may add to the Procfile: `release: bin/rails r 'require "tiny_tds"'`
+linked correctly. For example, in a ruby app, you may add to the Procfile: `release: bundle exec ruby -e "p(require 'tiny_tds')"`
 
 ## Install
 
