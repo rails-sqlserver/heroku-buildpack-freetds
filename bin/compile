@@ -74,7 +74,7 @@ mkdir -p "${BUILD_TARGET_DIR}"
 
 # This is the path that will be used at dyno runtime, and in which we build.
 APP_TARGET_DIR="/app/freetds"
-mkdir -p "${BUILD_TARGET_DIR}"
+mkdir -p "${APP_TARGET_DIR}"
 
 configure_app_env_vars() {
   topic "Creating .profile.d entry"
