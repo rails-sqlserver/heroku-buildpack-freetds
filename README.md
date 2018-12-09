@@ -9,7 +9,7 @@ the [FreeTDS](http://www.freetds.org/) binaries into your project.
 Optionally, set the FreeTDS version in a Heroku config like this:
 
 ```bash
-heroku config:set FREETDS_VERSION=1.00.21
+heroku config:set FREETDS_VERSION=1.00.109
 ```
 
 Make sure the version you're referencing exists on as a `.tar.gz` file on the [FreeTDS releases](ftp://ftp.freetds.org/pub/freetds/stable/).
@@ -40,7 +40,7 @@ Or at least, that's the hope!
 
 ## Stack compatibility
 
-This buildpack is tested primarily against the `cedar-14` stack.
+This buildpack is tested primarily against the `cedar-18` stack.
 
 Allows for usage of [TinyTDS](https://github.com/rails-sqlserver/tiny_tds) on Heroku.
 
@@ -56,13 +56,13 @@ linked correctly. For example, in a ruby app, you may add to the Procfile: `rele
 Use master
 
 ```bash
-heroku buildpacks:set --index 1 https://github.com/x-b-e/heroku-buildpack-freetds
+heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds
 ```
 
-or use a stable tag, like [v1.1.1](https://github.com/x-b-e/heroku-buildpack-freetds/tree/v1.1.1)
+or use a stable tag, like [v1.1.1](https://github.com/rails-sqlserver/heroku-buildpack-freetds/tree/v1.1.1)
 
 ```bash
-heroku buildpacks:set --index 1 https://github.com/x-b-e/heroku-buildpack-freetds#v1.1.1
+heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds#v1.1.1
 ```
 
 ## Changelog
@@ -86,7 +86,7 @@ Print TinyTDS build logs to the screen:
 
 ```bash
 # change env vars as needed
-( export TINY_TDS_VERSION="2.1.0"; export RUBY_PATH_VERSION="2.3.0"; for cmd in "ld /app/vendor/bundle/ruby/2.3.0/gems/tiny_tds-${TINY_TDS_VERSION}/lib/tiny_tds/tiny_tds.so" \
+( export TINY_TDS_VERSION="2.1.0"; export RUBY_PATH_VERSION="2.5.3"; for cmd in "ld /app/vendor/bundle/ruby/2.5.0/gems/tiny_tds-${TINY_TDS_VERSION}/lib/tiny_tds/tiny_tds.so" \
 "cat /app/vendor/bundle/ruby/${RUBY_PATH_VERSION}/gems/tiny_tds-${TINY_TDS_VERSION}/ext/tiny_tds/Makefile" \
 "cat /app/vendor/bundle/ruby/${RUBY_PATH_VERSION}/extensions/x86_64-linux/${RUBY_PATH_VERSION}-static/tiny_tds-${TINY_TDS_VERSION}/gem_make.out" \
 "cat   /app/vendor/bundle/ruby/${RUBY_PATH_VERSION}/extensions/x86_64-linux/${RUBY_PATH_VERSION}-static/tiny_tds-${TINY_TDS_VERSION}/mkmf.log" ; do
