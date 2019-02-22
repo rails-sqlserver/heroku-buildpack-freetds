@@ -116,11 +116,15 @@ configure_buildpack_env_vars() {
 }
 
 download_and_extract_freetds_archive() {
-  FREETDS_FILE="$FREETDS_ARCHIVE_NAME.tar.gz"
-  FREETDS_URL="ftp://ftp.freetds.org/pub/freetds/stable/${FREETDS_FILE}"
+  # FREETDS_FILE="$FREETDS_ARCHIVE_NAME.tar.gz"
+  # FREETDS_URL="ftp://ftp.freetds.org/pub/freetds/stable/${FREETDS_FILE}"
+  FREETDS_FILE="freetds-1.00.111.tar.bz2"
+  FREETDS_URL="http://www.mirrorservice.org/sites/distfiles.macports.org/freetds/${FREETDS_FILE}"
   # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
   # TODO(BF): Consider calculating and verifying SHA256: openssl dgst -sha256 < "$FREETDS_FILE"
-  curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" > "${BUILD_DIR}/build_log-unpack.log" # Can't write to the archive dir until it exists
+  # FREETDS_UNTAR="tar xzvf"
+  FREETDS_UNTAR="tar xjf"
+  curl -s "$FREETDS_URL" | ${FREETDS_UNTAR} - -C "${BUILD_DIR}" > "${BUILD_DIR}/build_log-unpack.log" # Can't write to the archive dir until it exists
   mv "${BUILD_DIR}/build_log-unpack.log" "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/"
 }
 
