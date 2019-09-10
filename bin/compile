@@ -58,7 +58,7 @@ load_env_vars() {
 }
 load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION" "FREETDS_REBUILD"
 
-FREETDS_VERSION="${FREETDS_VERSION:-1.00.21}"
+FREETDS_VERSION="${FREETDS_VERSION:-1.00.109}"
 FREETDS_ARCHIVE_NAME="${FREETDS_ARCHIVE_NAME:-freetds-${FREETDS_VERSION}}"
 TDS_VERSION="${TDS_VERSION:-7.3}" # or TDSVER
 
@@ -74,7 +74,7 @@ mkdir -p "${BUILD_TARGET_DIR}"
 
 # This is the path that will be used at dyno runtime, and in which we build.
 APP_TARGET_DIR="/app/freetds"
-mkdir -p "${BUILD_TARGET_DIR}"
+mkdir -p "${APP_TARGET_DIR}"
 
 configure_app_env_vars() {
   topic "Creating .profile.d entry"
