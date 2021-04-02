@@ -9,7 +9,7 @@ the [FreeTDS](http://www.freetds.org/) binaries into your project.
 Optionally, set the FreeTDS version in a Heroku config like this:
 
 ```bash
-heroku config:set FREETDS_VERSION=1.00.109
+heroku config:set FREETDS_VERSION=1.2.18
 ```
 
 Make sure the version you're referencing exists on as a `.tar.gz` file on the [FreeTDS releases](ftp://ftp.freetds.org/pub/freetds/stable/).
