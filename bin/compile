@@ -83,7 +83,7 @@ configure_app_env_vars() {
   # These exports must point to /app, because the profile is
   # executed in a running dyno, not the buildpack environment
   cat <<EOF > "${BUILD_DIR}/.profile.d/freetds.sh"
-  export PATH="${APP_TARGET_DIR}/bin:$PATH"
+  export PATH="${APP_TARGET_DIR}/bin:\$PATH"
   # tiny_tds extconf.rb uses FREETDS_DIR
   # https://github.com/rails-sqlserver/tiny_tds/blob/5046755ca91594003f8b3ca541d136f3ed859973/ext/tiny_tds/extconf.rb#L36-L38
   export FREETDS_DIR="${APP_TARGET_DIR}"
