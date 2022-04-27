@@ -102,7 +102,7 @@ EOF
 configure_buildpack_env_vars() {
   # These exports point to the build directory, not to /app, so that
   # they work for later buildpacks.
-  export PATH="${BUILD_TARGET_DIR}/bin:$PATH"
+  export PATH="${BUILD_TARGET_DIR}/bin:\$PATH"
   export FREETDS_DIR="${BUILD_TARGET_DIR}"
   export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
   export LD_RUN_PATH="${BUILD_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
