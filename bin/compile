@@ -140,6 +140,7 @@ build_and_install_freetds() {
     cat <<EOF > ".build_options"
     ./configure \
       "--prefix=${APP_TARGET_DIR}" \
+      --with-gnutls \
       --disable-odbc \
       --disable-debug \
       "--with-tdsver=${TDS_VERSION}"
