@@ -40,7 +40,7 @@ Or at least, that's the hope!
 
 ## Stack compatibility
 
-This buildpack is tested primarily against the `cedar-18` stack.
+This buildpack is tested primarily against the `heroku-22` stack.
 
 Allows for usage of [TinyTDS](https://github.com/rails-sqlserver/tiny_tds) on Heroku.
 
@@ -93,6 +93,9 @@ Print TinyTDS build logs to the screen:
 "cat   /app/vendor/bundle/ruby/${RUBY_PATH_VERSION}/extensions/x86_64-linux/${RUBY_PATH_VERSION}-static/tiny_tds-${TINY_TDS_VERSION}/mkmf.log" ; do
 echo -e "\n\n----------------------- $cmd------------------\n\n"; eval "$cmd"; done ; )
 ```
+
+### Connection Timeout
+If you receive connection timeout errors, consider TLS/gnutls.  You can set the environment variable heroku config:set USE_GNUTLS=" " and temporarily set `heroku config:set FREETDS_REBUILD=true` to rebuild the code using TLS.  See https://github.com/FreeTDS/freetds/issues/336 for some more information
 
 License
 -------
