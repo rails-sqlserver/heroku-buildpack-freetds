@@ -95,7 +95,7 @@ echo -e "\n\n----------------------- $cmd------------------\n\n"; eval "$cmd"; d
 ```
 
 ### Connection Timeout
-If you receive connection timeout errors, consider TLS/gnutls.  You can set the environment variable heroku config:set USE_GNUTLS=" " and temporarily set `heroku config:set FREETDS_REBUILD=true` to rebuild the code using TLS.  See https://github.com/FreeTDS/freetds/issues/336 for some more information
+If you receive connection timeout errors (e.g. "Adaptive Server connection failed"), consider whether TLS/gnutls is interacting poorly with heroku or the server where your mssql server lives.  You can set the environment variable `heroku config:set USE_GNUTLS=" "` and temporarily set `heroku config:set FREETDS_REBUILD=true` to rebuild the code using TLS.  See https://github.com/FreeTDS/freetds/issues/336 for more information.
 
 License
 -------
