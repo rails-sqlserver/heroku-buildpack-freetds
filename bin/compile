@@ -141,7 +141,7 @@ build_and_install_freetds() {
 
     # As of Oct. 2022, heroku-22 stack currently only works with gnutls.
     # Allow this to be toggled off in the future with `export USE_GNUTLS=" "`
-    # See https://github.com/FreeTDS/freetds/issues/336 for some mor information.
+    # See https://github.com/FreeTDS/freetds/issues/336 for some more information.
     cat <<EOF > ".build_options"
     ./configure \
       "--prefix=${APP_TARGET_DIR}" \
