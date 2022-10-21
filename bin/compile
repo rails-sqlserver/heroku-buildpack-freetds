@@ -56,11 +56,12 @@ load_env_vars() {
   local env_var; env_var="${1:-}"
   until [ -z "$env_var" ]; do [ -f "$ENV_DIR/$env_var" ] && export "$env_var=$(cat "$ENV_DIR/$env_var")"; shift ; env_var="${1:-}" ; done
 }
-load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION" "FREETDS_REBUILD"
+load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION" "FREETDS_REBUILD" "USE_GNUTLS"
 
 FREETDS_VERSION="${FREETDS_VERSION:-1.00.109}"
 FREETDS_ARCHIVE_NAME="${FREETDS_ARCHIVE_NAME:-freetds-${FREETDS_VERSION}}"
 TDS_VERSION="${TDS_VERSION:-7.3}" # or TDSVER
+USE_GNUTLS="${USE_GNUTLS:---with-gnutls}"
 
 CACHED_TAR="${CACHE_DIR}/freetds-${FREETDS_VERSION}-heroku.tar.bz2"
 # Default rebuild to true since I'm having issues linking the library to tiny_tds gem with a cached build.
@@ -137,9 +138,16 @@ build_and_install_freetds() {
     # FreeTDS advises caching the build options as below
     # adding --disable-odbc making linking easier and we don't need it
     # adding --disable-debug to speed up compile
+
+    # As of Oct. 2022, heroku-22 stack currently only works with gnutls.
+    # Allow this to be toggled off in the future with `export USE_GNUTLS=" "`
+    # See https://github.com/FreeTDS/freetds/issues/336
+    # and https://www.freetds.org/userguide/config.html
+    # for more information.
     cat <<EOF > ".build_options"
     ./configure \
       "--prefix=${APP_TARGET_DIR}" \
+      "${USE_GNUTLS}" \
       --disable-odbc \
       --disable-debug \
       "--with-tdsver=${TDS_VERSION}"
