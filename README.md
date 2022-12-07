@@ -40,7 +40,7 @@ Or at least, that's the hope!
 
 ## Stack compatibility
 
-This buildpack is tested primarily against the `cedar-18` stack.
+This buildpack is tested primarily against the `heroku-22` stack.
 
 Allows for usage of [TinyTDS](https://github.com/rails-sqlserver/tiny_tds) on Heroku.
 
@@ -59,15 +59,16 @@ Use master
 heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds
 ```
 
-or use a stable tag, like [v1.1.2](https://github.com/rails-sqlserver/heroku-buildpack-freetds/tree/v1.1.2)
+or use a stable tag, like [v1.1.3](https://github.com/rails-sqlserver/heroku-buildpack-freetds/tree/v1.1.3)
 
 ```bash
-heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds#v1.1.2
+heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds#v1.1.3
 ```
 
 ## Changelog
 
-- HEAD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.2...master)
+- HEAD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.3...master)
+- 1.1.3 Update to support Heroku 22 ssl versoin [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.2...v.1.1.3)
 - 1.1.2 Update FREETDS_VERSION from 1.00.21 to 1.00.109; Get source from https. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.1...v1.1.2)
 - 1.1.1 Fixed build linking. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.0...v1.1.1)
 - 1.1.0 Some improvements, including logging and env var FREETDS_REBUILD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.0.0...v1.1.0)
@@ -93,6 +94,9 @@ Print TinyTDS build logs to the screen:
 "cat   /app/vendor/bundle/ruby/${RUBY_PATH_VERSION}/extensions/x86_64-linux/${RUBY_PATH_VERSION}-static/tiny_tds-${TINY_TDS_VERSION}/mkmf.log" ; do
 echo -e "\n\n----------------------- $cmd------------------\n\n"; eval "$cmd"; done ; )
 ```
+
+### Connection Timeout
+If you receive connection timeout errors (e.g. "Adaptive Server connection failed"), consider whether TLS/gnutls is interacting poorly with heroku or the server where your mssql server lives.  You can set the environment variable `heroku config:set USE_GNUTLS=" "` and temporarily set `heroku config:set FREETDS_REBUILD=true` to rebuild the code using TLS.  See https://github.com/FreeTDS/freetds/issues/336 for more information.
 
 License
 -------
