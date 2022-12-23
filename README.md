@@ -9,7 +9,7 @@ the [FreeTDS](http://www.freetds.org/) binaries into your project.
 Optionally, set the FreeTDS version in a Heroku config like this:
 
 ```bash
-heroku config:set FREETDS_VERSION=1.00.109
+heroku config:set FREETDS_VERSION=1.3.16
 ```
 
 Make sure the version you're referencing exists on as a `.tar.gz` file on the [FreeTDS releases](ftp://ftp.freetds.org/pub/freetds/stable/).
@@ -59,15 +59,16 @@ Use master
 heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds
 ```
 
-or use a stable tag, like [v1.1.3](https://github.com/rails-sqlserver/heroku-buildpack-freetds/tree/v1.1.3)
+or use a stable tag, like [v1.1.4](https://github.com/rails-sqlserver/heroku-buildpack-freetds/tree/v1.1.4)
 
 ```bash
-heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds#v1.1.3
+heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds#v1.1.4
 ```
 
 ## Changelog
 
-- HEAD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.3...master)
+- HEAD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.4...master)
+- 1.1.4 Escape $PATH to ensure dynamic evaluation [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.3...v.1.1.4)
 - 1.1.3 Update to support Heroku 22 ssl versoin [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.2...v.1.1.3)
 - 1.1.2 Update FREETDS_VERSION from 1.00.21 to 1.00.109; Get source from https. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.1...v1.1.2)
 - 1.1.1 Fixed build linking. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.0...v1.1.1)
