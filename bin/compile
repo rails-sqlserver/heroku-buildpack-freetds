@@ -136,7 +136,7 @@ configure_app_env_vars() {
   # tiny_tds extconf.rb uses FREETDS_DIR
   # https://github.com/rails-sqlserver/tiny_tds/blob/5046755ca91594003f8b3ca541d136f3ed859973/ext/tiny_tds/extconf.rb#L36-L38
   export FREETDS_DIR="\${HOME}/.freetds"
-  export LD_LIBRARY_PATH="\${HOME}/.freetds/lib:\$\{LD_LIBRARY_PATH:-}"
+  export LD_LIBRARY_PATH="\${HOME}/.freetds/lib:\${LD_LIBRARY_PATH:-}"
   export LD_RUN_PATH="\${HOME}/.freetds/lib:\${LD_RUN_PATH:-}"
   export LIBRARY_PATH="\${HOME}/.freetds/lib:\${LIBRARY_PATH:-}"
   export SYBASE="\${HOME}/.freetds"
