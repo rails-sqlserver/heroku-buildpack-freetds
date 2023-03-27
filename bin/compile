@@ -172,6 +172,9 @@ configure_buildpack_env_vars() {
 
   echo "configured BUILDPACK env vars:" | indent
   indent < "${LP_DIR}/export"
+
+  topic "Rewrite package-config files"
+  find "$BUILD_DIR/.freetds" -type f -ipath '*/pkgconfig/*.pc' | xargs --no-run-if-empty -n 1 sed -i -e 's!^prefix=\(.*\)$!prefix='"$BUILD_DIR"'/.freetds\1!g'
 }
 
 download_and_extract_freetds_archive() {
