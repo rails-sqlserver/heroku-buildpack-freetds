@@ -59,17 +59,18 @@ Use master
 heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds
 ```
 
-or use a stable tag, like [v1.1.4](https://github.com/rails-sqlserver/heroku-buildpack-freetds/tree/v1.1.4)
+or use a stable tag, like [v1.1.5](https://github.com/rails-sqlserver/heroku-buildpack-freetds/tree/v1.1.5)
 
 ```bash
-heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds#v1.1.4
+heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds#v1.1.5
 ```
 
 ## Changelog
 
 - HEAD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.4...master)
-- 1.1.4 Fix env var escaping for compatibility with other buildpacks [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.3...v.1.1.4)
-- 1.1.3 Update to support Heroku 22 ssl version [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.2...v.1.1.3)
+- 1.1.5 Fix env var escaping for compatibility with other buildpacks [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.3...v1.1.5)
+- 1.1.4 Buggy version of 1.1.5.
+- 1.1.3 Update to support Heroku 22 ssl version [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.2...v1.1.3)
 - 1.1.2 Update FREETDS_VERSION from 1.00.21 to 1.00.109; Get source from https. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.1...v1.1.2)
 - 1.1.1 Fixed build linking. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.1.0...v1.1.1)
 - 1.1.0 Some improvements, including logging and env var FREETDS_REBUILD. [Diff](https://github.com/rails-sqlserver/heroku-buildpack-freetds/compare/v1.0.0...v1.1.0)
