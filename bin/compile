@@ -136,9 +136,9 @@ configure_app_env_vars() {
   # tiny_tds extconf.rb uses FREETDS_DIR
   # https://github.com/rails-sqlserver/tiny_tds/blob/5046755ca91594003f8b3ca541d136f3ed859973/ext/tiny_tds/extconf.rb#L36-L38
   export FREETDS_DIR="\${HOME}/.freetds"
-  export LD_LIBRARY_PATH="\${HOME}/.freetds/lib:\$\{LD_LIBRARY_PATH:-/usr/local/lib}"
-  export LD_RUN_PATH="\${HOME}/.freetds/lib:\${LD_RUN_PATH:-/usr/local/lib}"
-  export LIBRARY_PATH="\${HOME}/.freetds/lib:\${LIBRARY_PATH:-/usr/local/lib}"
+  export LD_LIBRARY_PATH="\${HOME}/.freetds/lib:\$\{LD_LIBRARY_PATH:-}"
+  export LD_RUN_PATH="\${HOME}/.freetds/lib:\${LD_RUN_PATH:-}"
+  export LIBRARY_PATH="\${HOME}/.freetds/lib:\${LIBRARY_PATH:-}"
   export SYBASE="\${HOME}/.freetds"
 
   echo "-----> DEBUG: ENV VARS after set in .profile.d/freetds.sh"
@@ -159,12 +159,14 @@ EOF
 configure_buildpack_env_vars() {
   # These exports point to the build directory, not to /app, so that
   # they work for later buildpacks.
-  export PATH="${BUILD_TARGET_DIR}/bin:$PATH"
-  export FREETDS_DIR="${BUILD_TARGET_DIR}"
-  export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
-  export LD_RUN_PATH="${BUILD_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
-  export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
-  export SYBASE="${APP_TARGET_DIR}"
+  # Assert $BUILD_TARGET_DIR = $HOME/.freetds # /app/freetds
+  # Assert $APP_TARGET_DIR = $HOME/.freetds # /app/freetds
+  export PATH="${HOME}/.freetds/bin:$PATH"
+  export FREETDS_DIR="${HOME}/.freetds"
+  export LD_LIBRARY_PATH="${HOME}/.freetds/lib:${LD_LIBRARY_PATH:-}"
+  export LD_RUN_PATH="${HOME}/.freetds/lib:${LD_RUN_PATH:-}"
+  export LIBRARY_PATH="${HOME}/.freetds/lib:${LIBRARY_PATH:-}"
+  export SYBASE="${HOME}/.freetds"
   # give environment to later buildpacks
   export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LD_RUN_PATH|LIBRARY_PATH|FREETDS_DIR|SYBASE)=' > "${LP_DIR}/export"
 
