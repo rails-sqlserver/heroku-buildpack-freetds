@@ -35,6 +35,18 @@ trap 'finish_error $LINENO' ERR
 logstamp() { printf "[%s]" "$(TZ='America/Chicago' date +'%Y-%m-%d %H:%M:%S')" ; }
 topic()    { echo "-----> $(logstamp) $*" ; }
 info()     { echo "       $*" ; }
+HEROKU_FREETDS_BUILDPACK_DEBUG="${HEROKU_FREETDS_BUILDPACK_DEBUG:-false}"
+debug()   {
+  if [ "$HEROKU_FREETDS_BUILDPACK_DEBUG" = "true" ]; then
+    echo "[DEBUG] $*"
+  fi
+}
+debug_topic() {
+  if [ "$HEROKU_FREETDS_BUILDPACK_DEBUG" = "true" ]; then
+    echo "[DEBUG] -----> $*"
+  fi
+}
+
 error()    { echo " !     $*" ;  >&2 exit 1  ; }
 indent() {
   local command; command='s/^/       /'
@@ -70,16 +82,16 @@ ROOT_DIR="$(dirname "$BIN_DIR")"
 info "BIN_DIR=${BIN_DIR}, ROOT_DIR=${ROOT_DIR}, BUILD_DIR=${BUILD_DIR}, CACHE_DIR=${CACHE_DIR}, CACHED_STACK=${CACHED_STACK} pwd=$(pwd)"
 
 debug_exported_env_vars() {
-  info "DEBUG: ENV VARS"
-  info "DEBUG: ENV VARS: PATH=${PATH:-}"
-  info "DEBUG: ENV VARS: FREETDS_DIR=${FREETDS_DIR:-}"
-  info "DEBUG: ENV VARS: LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
-  info "DEBUG: ENV VARS: LD_RUN_PATH=${LD_RUN_PATH:-}"
-  info "DEBUG: ENV VARS: LIBRARY_PATH=${LIBRARY_PATH:-}"
-  info "DEBUG: ENV VARS: SYBASE=${SYBASE:-}"
+  debug "ENV VARS"
+  debug "ENV VARS: PATH=${PATH:-}"
+  debug "ENV VARS: FREETDS_DIR=${FREETDS_DIR:-}"
+  debug "ENV VARS: LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
+  debug "ENV VARS: LD_RUN_PATH=${LD_RUN_PATH:-}"
+  debug "ENV VARS: LIBRARY_PATH=${LIBRARY_PATH:-}"
+  debug "ENV VARS: SYBASE=${SYBASE:-}"
 }
 
-topic "debug env vars before load_env_vars"
+debug_topic "debug env vars before load_env_vars"
 debug_exported_env_vars
 
 load_env_vars() {
@@ -88,7 +100,7 @@ load_env_vars() {
 }
 load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION" "FREETDS_REBUILD" "USE_GNUTLS"
 
-topic "debug env vars after load_env_vars"
+debug_topic "debug env vars after load_env_vars"
 debug_exported_env_vars
 
 FREETDS_VERSION="${FREETDS_VERSION:-1.00.109}"
@@ -124,14 +136,6 @@ configure_app_env_vars() {
   # These exports must point to /app, because the profile is
   # executed in a running dyno, not the buildpack environment
   cat <<EOF > "${BUILD_DIR}/.profile.d/freetds.sh"
-  echo "-----> DEBUG: ENV VARS before set in .profile.d/freetds.sh"
-  echo "       DEBUG: ENV VARS: PATH=${PATH:-}"
-  echo "       DEBUG: ENV VARS: FREETDS_DIR=${FREETDS_DIR:-}"
-  echo "       DEBUG: ENV VARS: LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
-  echo "       DEBUG: ENV VARS: LD_RUN_PATH=${LD_RUN_PATH:-}"
-  echo "       DEBUG: ENV VARS: LIBRARY_PATH=${LIBRARY_PATH:-}"
-  echo "       DEBUG: ENV VARS: SYBASE=${SYBASE:-}"
-
   export PATH="\${HOME}/.freetds/bin:\$PATH"
   # tiny_tds extconf.rb uses FREETDS_DIR
   # https://github.com/rails-sqlserver/tiny_tds/blob/5046755ca91594003f8b3ca541d136f3ed859973/ext/tiny_tds/extconf.rb#L36-L38
@@ -140,14 +144,6 @@ configure_app_env_vars() {
   export LD_RUN_PATH="\${HOME}/.freetds/lib:\${LD_RUN_PATH:-}"
   export LIBRARY_PATH="\${HOME}/.freetds/lib:\${LIBRARY_PATH:-}"
   export SYBASE="\${HOME}/.freetds"
-
-  echo "-----> DEBUG: ENV VARS after set in .profile.d/freetds.sh"
-  echo "       DEBUG: ENV VARS: PATH=${PATH:-}"
-  echo "       DEBUG: ENV VARS: FREETDS_DIR=${FREETDS_DIR:-}"
-  echo "       DEBUG: ENV VARS: LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
-  echo "       DEBUG: ENV VARS: LD_RUN_PATH=${LD_RUN_PATH:-}"
-  echo "       DEBUG: ENV VARS: LIBRARY_PATH=${LIBRARY_PATH:-}"
-  echo "       DEBUG: ENV VARS: SYBASE=${SYBASE:-}"
 EOF
  chmod +x "${BUILD_DIR}/.profile.d/freetds.sh"
  echo "configured APP env vars:" | indent
@@ -180,9 +176,11 @@ configure_buildpack_env_vars() {
 download_and_extract_freetds_archive() {
   FREETDS_FILE="$FREETDS_ARCHIVE_NAME.tar.gz"
   FREETDS_URL="https://www.freetds.org/files/stable/${FREETDS_FILE}"
-  # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
   # TODO(BF): Consider calculating and verifying SHA256: openssl dgst -sha256 < "$FREETDS_FILE"
   curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" > "${BUILD_DIR}/build_log-unpack.log" # Can't write to the archive dir until it exists
+  if [ "$HEROKU_FREETDS_BUILDPACK_DEBUG" = "true" ]; then
+    debug "$(cat "${BUILD_DIR}/build_log-unpack.log")"
+  fi
   mv "${BUILD_DIR}/build_log-unpack.log" "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/"
 }
 
@@ -213,13 +211,20 @@ build_and_install_freetds() {
       --disable-debug \
       "--with-tdsver=${TDS_VERSION}"
 EOF
-    # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
     /bin/bash .build_options > build_log-configure.stdout.log 2> build_log-configure.stderr.log
+    if [ "$HEROKU_FREETDS_BUILDPACK_DEBUG" = "true" ]; then
+      debug "$(cat .build_options)"
+      debug "$(cat build_log-configure.stdout.log)"
+      debug "$(cat build_log-configure.stderr.log)"
+    fi
     # Flush make output to log since a file will be faster than printing to the screen.
-    # TODO(BF): Print log when HEROKUR_FREETDS_BUILDPACK_DEBUG is set
     {
       make && make install && make clean
     } > build_log-make_install.stdout.log 2> build_log-make_install.stderr.log
+    if [ "$HEROKU_FREETDS_BUILDPACK_DEBUG" = "true" ]; then
+      debug "$(cat build_log-make_install.stdout.log)"
+      debug "$(cat build_log-make_install.stderr.log)"
+    fi
     cp .build_options build_log-* "${APP_TARGET_DIR}/"
 
     cd "$BUILD_DIR"
@@ -241,10 +246,10 @@ cache_build_artifacts_for_future_deploys() {
 main() {
   topic "FreeTDS ${FREETDS_VERSION} building in ${BUILD_DIR}"
 
-  topic "debug env vars before configure_app_env_vars"
+  debug_topic "debug env vars before configure_app_env_vars"
   debug_exported_env_vars
   configure_app_env_vars
-  topic "debug env vars after configure_app_env_vars"
+  debug_topic "debug env vars after configure_app_env_vars"
   debug_exported_env_vars
 
   if [ ! -f "$CACHED_TAR" ]; then
@@ -262,12 +267,12 @@ main() {
   info "Unpacking cached files..."
   tar xjf "${CACHED_TAR}" -C "${BUILD_TARGET_DIR}" | indent
 
-  topic "debug env vars before configure_buildpack_env_vars"
+  debug_topic "debug env vars before configure_buildpack_env_vars"
   debug_exported_env_vars
 
   configure_buildpack_env_vars
 
-  topic "debug env vars after configure_buildpack_env_vars"
+  debug_topic "debug env vars after configure_buildpack_env_vars"
   debug_exported_env_vars
 
   info "Install of FreeTDS ${FREETDS_VERSION} complete"
