@@ -46,7 +46,6 @@ debug_topic() {
     echo "[DEBUG] -----> $*"
   fi
 }
-
 error()    { echo " !     $*" ;  >&2 exit 1  ; }
 indent() {
   local command; command='s/^/       /'
@@ -58,13 +57,13 @@ indent() {
 
 BUILD_DIR="$1"
 CACHE_DIR="$2"
+mkdir -p "$BUILD_DIR" "$CACHE_DIR"
 # shellcheck disable=SC2034
 ENV_DIR="${3}"
 # echo "$STACK"
 # echo "$SOURCE_VERSION"
 # See https://devcenter.heroku.com/articles/buildpack-api#bin-compile-summary
 
-mkdir -p "$BUILD_DIR" "$CACHE_DIR"
 # Store which STACK we are running on in the cache to bust the cache if it changes
 if [ -f "${CACHE_DIR}/.freetds/STACK" ]; then
   CACHED_STACK=$(cat "$CACHE_DIR/.freetds/STACK")
@@ -79,20 +78,7 @@ BIN_DIR="$(cd "$(dirname "$0")"; pwd)" # absolute path
 LP_DIR="$(cd "$(dirname "$0")"; cd ..; pwd)"
 ROOT_DIR="$(dirname "$BIN_DIR")"
 
-info "BIN_DIR=${BIN_DIR}, ROOT_DIR=${ROOT_DIR}, BUILD_DIR=${BUILD_DIR}, CACHE_DIR=${CACHE_DIR}, CACHED_STACK=${CACHED_STACK} pwd=$(pwd)"
-
-debug_exported_env_vars() {
-  debug "ENV VARS"
-  debug "ENV VARS: PATH=${PATH:-}"
-  debug "ENV VARS: FREETDS_DIR=${FREETDS_DIR:-}"
-  debug "ENV VARS: LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
-  debug "ENV VARS: LD_RUN_PATH=${LD_RUN_PATH:-}"
-  debug "ENV VARS: LIBRARY_PATH=${LIBRARY_PATH:-}"
-  debug "ENV VARS: SYBASE=${SYBASE:-}"
-}
-
-debug_topic "debug env vars before load_env_vars"
-debug_exported_env_vars
+info "BIN_DIR=${BIN_DIR}, ROOT_DIR=${ROOT_DIR}, BUILD_DIR=${BUILD_DIR}, CACHE_DIR=${CACHE_DIR}, STACK=${STACK} CACHED_STACK=${CACHED_STACK} pwd=$(pwd)"
 
 load_env_vars() {
   local env_var; env_var="${1:-}"
@@ -100,18 +86,15 @@ load_env_vars() {
 }
 load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION" "FREETDS_REBUILD" "USE_GNUTLS"
 
-debug_topic "debug env vars after load_env_vars"
-debug_exported_env_vars
-
 FREETDS_VERSION="${FREETDS_VERSION:-1.00.109}"
 FREETDS_ARCHIVE_NAME="${FREETDS_ARCHIVE_NAME:-freetds-${FREETDS_VERSION}}"
 TDS_VERSION="${TDS_VERSION:-7.3}" # or TDSVER
 USE_GNUTLS="${USE_GNUTLS:---with-gnutls}"
 
-FREETDS_CACHE_DIR="$CACHE_DIR/freetds/cache"
+FREETDS_CACHE_DIR="$CACHE_DIR"
 mkdir -p "${FREETDS_CACHE_DIR}"
 CACHED_TAR="${FREETDS_CACHE_DIR}/freetds-${FREETDS_VERSION}-heroku.tar.bz2"
-if [[ "$CACHED_STACK" != "$STACK" ]] ; then
+if [ "$CACHED_STACK" != "$STACK" ] ; then
   topic "Stack has changed. Clearing cache"
   rm -f "$CACHED_TAR"
 elif [ "${FREETDS_REBUILD:-}" = "true" ]; then
@@ -119,14 +102,15 @@ elif [ "${FREETDS_REBUILD:-}" = "true" ]; then
   topic "FREETDS_REBUILD is true. Clearing cache"
   rm -f "$CACHED_TAR"
 fi
-
 # This installation target is in the BUILD_DIR, which means that
 # it'll end up in the slug at runtime.
-BUILD_TARGET_DIR="${BUILD_DIR}/.freetds"
+# Assert $BUILD_TARGET_DIR = $HOME/freetds | $BUILD_DIR/freetds # /app/freetds
+BUILD_TARGET_DIR="${BUILD_DIR}/freetds" # /app/freetds
 mkdir -p "${BUILD_TARGET_DIR}"
 
 # This is the path that will be used at dyno runtime, and in which we build.
-APP_TARGET_DIR="${HOME:-app}/.freetds" # /app/freetds"
+# Assert $APP_TARGET_DIR = $HOME/freetds # /app/freetds
+APP_TARGET_DIR="${HOME:-app}/freetds"
 mkdir -p "${APP_TARGET_DIR}"
 
 configure_app_env_vars() {
@@ -135,15 +119,16 @@ configure_app_env_vars() {
 
   # These exports must point to /app, because the profile is
   # executed in a running dyno, not the buildpack environment
+  # Assert $APP_TARGET_DIR = $HOME/freetds # /app/freetds
   cat <<EOF > "${BUILD_DIR}/.profile.d/freetds.sh"
-  export PATH="\${HOME}/.freetds/bin:\$PATH"
+  export PATH="\${HOME}/freetds/bin:\$PATH"
   # tiny_tds extconf.rb uses FREETDS_DIR
   # https://github.com/rails-sqlserver/tiny_tds/blob/5046755ca91594003f8b3ca541d136f3ed859973/ext/tiny_tds/extconf.rb#L36-L38
-  export FREETDS_DIR="\${HOME}/.freetds"
-  export LD_LIBRARY_PATH="\${HOME}/.freetds/lib:\${LD_LIBRARY_PATH:-}"
-  export LD_RUN_PATH="\${HOME}/.freetds/lib:\${LD_RUN_PATH:-}"
-  export LIBRARY_PATH="\${HOME}/.freetds/lib:\${LIBRARY_PATH:-}"
-  export SYBASE="\${HOME}/.freetds"
+  export FREETDS_DIR="\${HOME}/freetds"
+  export LD_LIBRARY_PATH="\${HOME}/freetds/lib:\${LD_LIBRARY_PATH:-/usr/local/lib}"
+  export LD_RUN_PATH="\${HOME}/freetds/lib:\${LD_RUN_PATH:-/usr/local/lib}"
+  export LIBRARY_PATH="\${HOME}/freetds/lib:\${LIBRARY_PATH:-/usr/local/lib}"
+  export SYBASE="\${HOME}/freetds"
 EOF
  chmod +x "${BUILD_DIR}/.profile.d/freetds.sh"
  echo "configured APP env vars:" | indent
@@ -155,14 +140,14 @@ EOF
 configure_buildpack_env_vars() {
   # These exports point to the build directory, not to /app, so that
   # they work for later buildpacks.
-  # Assert $BUILD_TARGET_DIR = $HOME/.freetds # /app/freetds
-  # Assert $APP_TARGET_DIR = $HOME/.freetds # /app/freetds
-  export PATH="${HOME}/.freetds/bin:$PATH"
-  export FREETDS_DIR="${HOME}/.freetds"
-  export LD_LIBRARY_PATH="${HOME}/.freetds/lib:${LD_LIBRARY_PATH:-}"
-  export LD_RUN_PATH="${HOME}/.freetds/lib:${LD_RUN_PATH:-}"
-  export LIBRARY_PATH="${HOME}/.freetds/lib:${LIBRARY_PATH:-}"
-  export SYBASE="${HOME}/.freetds"
+  # Assert $BUILD_TARGET_DIR = $HOME/freetds | $BUILD_DIR/freetds # /app/freetds
+  export PATH="${BUILD_TARGET_DIR}/bin:$PATH"
+  export FREETDS_DIR="${BUILD_TARGET_DIR}"
+  export LD_LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LD_LIBRARY_PATH:-/usr/local/lib}"
+  export LD_RUN_PATH="${BUILD_TARGET_DIR}/lib:${LD_RUN_PATH:-/usr/local/lib}"
+  export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
+  # Assert $APP_TARGET_DIR = $HOME/freetds # /app/freetds
+  export SYBASE="${APP_TARGET_DIR}"
   # give environment to later buildpacks
   export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LD_RUN_PATH|LIBRARY_PATH|FREETDS_DIR|SYBASE)=' > "${LP_DIR}/export"
 
@@ -170,7 +155,8 @@ configure_buildpack_env_vars() {
   indent < "${LP_DIR}/export"
 
   topic "Rewrite package-config files"
-  find "$BUILD_DIR/.freetds" -type f -ipath '*/pkgconfig/*.pc' | xargs --no-run-if-empty -n 1 sed -i -e 's!^prefix=\(.*\)$!prefix='"$BUILD_DIR"'/.freetds\1!g'
+  # shellcheck disable=SC2038
+  find "$BUILD_DIR/freetds" -type f -ipath '*/pkgconfig/*.pc' | xargs --no-run-if-empty -n 1 sed -i -e 's!^prefix=\(.*\)$!prefix='"$BUILD_DIR"'/freetds\1!g'
 }
 
 download_and_extract_freetds_archive() {
@@ -178,10 +164,10 @@ download_and_extract_freetds_archive() {
   FREETDS_URL="https://www.freetds.org/files/stable/${FREETDS_FILE}"
   # TODO(BF): Consider calculating and verifying SHA256: openssl dgst -sha256 < "$FREETDS_FILE"
   curl -s "$FREETDS_URL" | tar xzvf - -C "${BUILD_DIR}" > "${BUILD_DIR}/build_log-unpack.log" # Can't write to the archive dir until it exists
+  mv "${BUILD_DIR}/build_log-unpack.log" "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/"
   if [ "$HEROKU_FREETDS_BUILDPACK_DEBUG" = "true" ]; then
     debug "$(cat "${BUILD_DIR}/build_log-unpack.log")"
   fi
-  mv "${BUILD_DIR}/build_log-unpack.log" "${BUILD_DIR}/${FREETDS_ARCHIVE_NAME}/"
 }
 
 build_and_install_freetds() {
@@ -246,11 +232,7 @@ cache_build_artifacts_for_future_deploys() {
 main() {
   topic "FreeTDS ${FREETDS_VERSION} building in ${BUILD_DIR}"
 
-  debug_topic "debug env vars before configure_app_env_vars"
-  debug_exported_env_vars
   configure_app_env_vars
-  debug_topic "debug env vars after configure_app_env_vars"
-  debug_exported_env_vars
 
   if [ ! -f "$CACHED_TAR" ]; then
     info "Cached files not found - downloading and unpacking..."
@@ -267,13 +249,7 @@ main() {
   info "Unpacking cached files..."
   tar xjf "${CACHED_TAR}" -C "${BUILD_TARGET_DIR}" | indent
 
-  debug_topic "debug env vars before configure_buildpack_env_vars"
-  debug_exported_env_vars
-
   configure_buildpack_env_vars
-
-  debug_topic "debug env vars after configure_buildpack_env_vars"
-  debug_exported_env_vars
 
   info "Install of FreeTDS ${FREETDS_VERSION} complete"
 }
