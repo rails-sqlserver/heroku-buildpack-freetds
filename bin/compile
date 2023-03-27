@@ -134,7 +134,7 @@ configure_buildpack_env_vars() {
   export LIBRARY_PATH="${BUILD_TARGET_DIR}/lib:${LIBRARY_PATH:-/usr/local/lib}"
   export SYBASE="${APP_TARGET_DIR}"
   # give environment to later buildpacks
-  export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|FREETDS_DIR|SYBASE)=' > "${LP_DIR}/export"
+  export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LD_RUN_PATH|LIBRARY_PATH|FREETDS_DIR|SYBASE)=' > "${LP_DIR}/export"
 
   echo "configured BUILDPACK env vars:" | indent
   indent < "${LP_DIR}/export"
