@@ -69,11 +69,27 @@ ROOT_DIR="$(dirname "$BIN_DIR")"
 
 info "BIN_DIR=${BIN_DIR}, ROOT_DIR=${ROOT_DIR}, BUILD_DIR=${BUILD_DIR}, CACHE_DIR=${CACHE_DIR}, CACHED_STACK=${CACHED_STACK} pwd=$(pwd)"
 
+debug_exported_env_vars() {
+  info "DEBUG: ENV VARS"
+  info "DEBUG: ENV VARS: PATH=${PATH:-}"
+  info "DEBUG: ENV VARS: FREETDS_DIR=${FREETDS_DIR:-}"
+  info "DEBUG: ENV VARS: LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
+  info "DEBUG: ENV VARS: LD_RUN_PATH=${LD_RUN_PATH:-}"
+  info "DEBUG: ENV VARS: LIBRARY_PATH=${LIBRARY_PATH:-}"
+  info "DEBUG: ENV VARS: SYBASE=${SYBASE:-}"
+}
+
+topic "debug env vars before load_env_vars"
+debug_exported_env_vars
+
 load_env_vars() {
   local env_var; env_var="${1:-}"
   until [ -z "$env_var" ]; do [ -f "$ENV_DIR/$env_var" ] && export "$env_var=$(cat "$ENV_DIR/$env_var")"; shift ; env_var="${1:-}" ; done
 }
 load_env_vars "FREETDS_VERSION" "FREETDS_ARCHIVE_NAME" "TDS_VERSION" "FREETDS_REBUILD" "USE_GNUTLS"
+
+topic "debug env vars after load_env_vars"
+debug_exported_env_vars
 
 FREETDS_VERSION="${FREETDS_VERSION:-1.00.109}"
 FREETDS_ARCHIVE_NAME="${FREETDS_ARCHIVE_NAME:-freetds-${FREETDS_VERSION}}"
@@ -108,6 +124,14 @@ configure_app_env_vars() {
   # These exports must point to /app, because the profile is
   # executed in a running dyno, not the buildpack environment
   cat <<EOF > "${BUILD_DIR}/.profile.d/freetds.sh"
+  echo "-----> DEBUG: ENV VARS before set in .profile.d/freetds.sh"
+  echo "       DEBUG: ENV VARS: PATH=${PATH:-}"
+  echo "       DEBUG: ENV VARS: FREETDS_DIR=${FREETDS_DIR:-}"
+  echo "       DEBUG: ENV VARS: LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
+  echo "       DEBUG: ENV VARS: LD_RUN_PATH=${LD_RUN_PATH:-}"
+  echo "       DEBUG: ENV VARS: LIBRARY_PATH=${LIBRARY_PATH:-}"
+  echo "       DEBUG: ENV VARS: SYBASE=${SYBASE:-}"
+
   export PATH="\${HOME}/.freetds/bin:\$PATH"
   # tiny_tds extconf.rb uses FREETDS_DIR
   # https://github.com/rails-sqlserver/tiny_tds/blob/5046755ca91594003f8b3ca541d136f3ed859973/ext/tiny_tds/extconf.rb#L36-L38
@@ -116,6 +140,14 @@ configure_app_env_vars() {
   export LD_RUN_PATH="\${HOME}/.freetds/lib:$\{LD_RUN_PATH:-/usr/local/lib}"
   export LIBRARY_PATH="\${HOME}/.freetds/lib:$\{LIBRARY_PATH:-/usr/local/lib}"
   export SYBASE="\${HOME}/.freetds"
+
+  echo "-----> DEBUG: ENV VARS after set in .profile.d/freetds.sh"
+  echo "       DEBUG: ENV VARS: PATH=${PATH:-}"
+  echo "       DEBUG: ENV VARS: FREETDS_DIR=${FREETDS_DIR:-}"
+  echo "       DEBUG: ENV VARS: LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
+  echo "       DEBUG: ENV VARS: LD_RUN_PATH=${LD_RUN_PATH:-}"
+  echo "       DEBUG: ENV VARS: LIBRARY_PATH=${LIBRARY_PATH:-}"
+  echo "       DEBUG: ENV VARS: SYBASE=${SYBASE:-}"
 EOF
  chmod +x "${BUILD_DIR}/.profile.d/freetds.sh"
  echo "configured APP env vars:" | indent
@@ -204,7 +236,11 @@ cache_build_artifacts_for_future_deploys() {
 main() {
   topic "FreeTDS ${FREETDS_VERSION} building in ${BUILD_DIR}"
 
+  topic "debug env vars before configure_app_env_vars"
+  debug_exported_env_vars
   configure_app_env_vars
+  topic "debug env vars after configure_app_env_vars"
+  debug_exported_env_vars
 
   if [ ! -f "$CACHED_TAR" ]; then
     info "Cached files not found - downloading and unpacking..."
@@ -221,7 +257,13 @@ main() {
   info "Unpacking cached files..."
   tar xjf "${CACHED_TAR}" -C "${BUILD_TARGET_DIR}" | indent
 
+  topic "debug env vars before configure_buildpack_env_vars"
+  debug_exported_env_vars
+
   configure_buildpack_env_vars
+
+  topic "debug env vars after configure_buildpack_env_vars"
+  debug_exported_env_vars
 
   info "Install of FreeTDS ${FREETDS_VERSION} complete"
 }
