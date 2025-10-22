@@ -223,8 +223,8 @@ cache_build_artifacts_for_future_deploys() {
   topic "Caching FreeTDS installation"
   ( # directory changes in subshells have no effect
     cd "${APP_TARGET_DIR}"
-    # TODO(BF): Consider removing the documentation before tarring
-    # rm -rf share
+    # Remove documentation to reduce build size
+    rm -rf share/doc
     tar cjf "${CACHED_TAR}" . | indent
   )
 }
