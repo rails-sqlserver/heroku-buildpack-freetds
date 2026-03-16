@@ -53,17 +53,28 @@ linked correctly. For example, in a ruby app, you may add to the Procfile: `rele
 
 ## Install
 
+First set your regular buildpack if you are relying on it beeing autodetected and have not set it explicitly. For example if using ruby:
+
+```bash
+heroku buildpacks:set heroku/ruby
+```
+
 Use master
 
 ```bash
-heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds
+heroku buildpacks:add --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds
 ```
 
 or use a stable tag, like [v1.1.5](https://github.com/rails-sqlserver/heroku-buildpack-freetds/tree/v1.1.5)
 
 ```bash
-heroku buildpacks:set --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds#v1.1.5
+heroku buildpacks:add --index 1 https://github.com/rails-sqlserver/heroku-buildpack-freetds#v1.1.5
 ```
+If you get an error like "zsh: no matches found:" , try wrapping the url in quotes to make it work.
+
+The end result you ar looking for when viewing your buildpacks (using `heroku buildpacks`) is something like this:
+ 1. https://github.com/rails-sqlserver/heroku-buildpack-freetds
+ 2. heroku/ruby 
 
 ## Changelog
 
